@@ -1,13 +1,13 @@
-import { BrowserRouter, Route, Routes } from "react-router-dom";
-
-import AdminDashboard from "./components/AdminDashboard.jsx";
+import React from "react";
+import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
+import AdminDashboard from "./components/AdminDashboard";
 import SiteChatbot from "./components/Chatbot.jsx";
 import Hero from "./components/Hero";
 import Navbar from "./components/Navbar";
 
-function App() {
+const App = () => {
   return (
-    <BrowserRouter>
+    <Router>
       <Routes>
         <Route path="/admin/*" element={<AdminDashboard />} />
         <Route
@@ -16,17 +16,13 @@ function App() {
             <div>
               <Navbar />
               <Hero />
-              {/* <Features /> */}
-              {/* <Testimonial /> */}
-              {/* <CallToAction /> */}
-              {/* <Footer /> */}
               <SiteChatbot />
             </div>
           }
         />
       </Routes>
-    </BrowserRouter>
+    </Router>
   );
-}
+};
 
 export default App;

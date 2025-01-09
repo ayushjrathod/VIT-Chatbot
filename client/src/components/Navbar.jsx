@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import vitlogo from "../assets/vitlogo.png";
+
+import companyLogo from "../assets/vitlogo.png";
+
 const Navbar = () => {
   const [toggleMenu, setToggleMenu] = useState(false);
 
@@ -10,24 +12,12 @@ const Navbar = () => {
       <div className="flex items-center justify-between">
         {/* Logo */}
         <Link to="/" className=" w-96 h-16">
-          <img to="/" src={vitlogo} alt="Indian Aviation Academy" />
+          <img className="" src={companyLogo} alt="" />
         </Link>
         {/* Menu Items */}
         <div className="hidden space-x-6 md:flex">
           <Link to="/admin/dashboard" className="hover:text-darkGrayishBlue">
             Admin Panel
-          </Link>
-          <Link to="#" className="hover:text-darkGrayishBlue">
-            Academics
-          </Link>
-          <Link to="#" className="hover:text-darkGrayishBlue">
-            Placements
-          </Link>
-          <Link to="#" className="hover:text-darkGrayishBlue">
-            Accreditation
-          </Link>
-          <Link to="#" className="hover:text-darkGrayishBlue">
-            About Us
           </Link>
         </div>
         {/* Hamburger Icon */}
@@ -54,11 +44,7 @@ const Navbar = () => {
               : "absolute flex-col items-center hidden self-end py-8 mt-10 space-y-6 font-bold bg-white sm:w-auto sm:self-center left-6 right-6 drop-shadow-md"
           }
         >
-          <Link to="#">Training Calendar</Link>
-          <Link to="#">Photo Gallery</Link>
-          <Link to="#">About Us</Link>
-          <Link to="#">Careers</Link>
-          <Link to="#">News</Link>
+          <Link to="/admin/dashboard">Admin Panel</Link>
         </div>
       </div>
     </nav>
