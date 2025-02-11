@@ -6,6 +6,7 @@ const UpdateKnowledgeBase = ({ onClose, editData }) => {
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
   const [moreInfo, setMoreInfo] = useState("");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (editData) {
@@ -17,12 +18,10 @@ const UpdateKnowledgeBase = ({ onClose, editData }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     try {
       let response;
       if (editData) {
-        // Editing an existing question
-        response = await fetch(`http://127.0.0.1:8000/edit?serial_no=${editData.serial_no}`, {
+        response = await fetch(`${import.meta.env.VITE_API_URL}/edit?serial_no=${editData.serial_no}`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
@@ -30,8 +29,7 @@ const UpdateKnowledgeBase = ({ onClose, editData }) => {
           body: JSON.stringify({ question, answer, more_info: moreInfo }),
         });
       } else {
-        // Adding a new question
-        response = await fetch("http://127.0.0.1:8000/add-question", {
+        response = await fetch(`${import.meta.env.VITE_API_URL}/add-question`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -46,6 +44,7 @@ const UpdateKnowledgeBase = ({ onClose, editData }) => {
         setAnswer("");
         setMoreInfo("");
         onClose();
+        window.location.reload();
       } else {
         alert(
           editData
@@ -66,14 +65,19 @@ const UpdateKnowledgeBase = ({ onClose, editData }) => {
       exit={{ opacity: 0 }}
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center"
     >
-      <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-white p-8 rounded-lg shadow-xl w-1/2">
+      <motion.div
+        initial={{ scale: 0.9 }}
+        animate={{ scale: 1 }}
+        className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md"
+      >
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-semibold">{editData ? "Edit Knowledge Base Entry" : "Update Knowledge Base"}</h2>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
             <X size={24} />
           </button>
         </div>
-        <form className="" onSubmit={handleSubmit}>
+
+        <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label htmlFor="question" className="block text-sm font-medium text-gray-700 mb-2">
               Question
