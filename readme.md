@@ -23,7 +23,7 @@ This project provides a chatbot that can be integrated into websites to answer u
    ```
 3. Start the FastAPI server:
    ```
-   uvicorn server-vit:app --reload
+   uvicorn app:app --reload
    ```
 
 ### 2. Frontend (React)
@@ -57,7 +57,6 @@ This project provides a chatbot that can be integrated into websites to answer u
 
 ## Important Notes
 
-- Edit the “api/server-vit.py” file to configure the URL endpoints for knowledge base operations.
+- Edit the “api/app.py” file to configure the URL endpoints for knowledge base operations.
 - In production, restrict CORS origins and protect your endpoints.
 - Adjust or regenerate embeddings if your knowledge base CSV changes significantly.
-
