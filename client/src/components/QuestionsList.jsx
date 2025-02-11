@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import React, { useEffect, useState } from "react";
 import UpdateKnowledgeBase from "./UpdateKnowledgeBase";
 
 const QuestionsList = () => {
@@ -17,7 +17,7 @@ const QuestionsList = () => {
   // Fetch all questions from the backend
   const fetchQuestions = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/get-all-questions");
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/get-all-questions`);
       const data = await response.json();
       setQuestions(data.questions);
     } catch (error) {
@@ -29,6 +29,30 @@ const QuestionsList = () => {
   useEffect(() => {
     fetchQuestions();
   }, []);
+
+  // Handle deleting a question
+  const handleDelete = async (serialNo) => {
+    const confirmDelete = window.confirm(`Are you sure you want to delete the question with Serial No: ${serialNo}?`);
+    if (!confirmDelete) return;
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/delete-question?serial_no=${serialNo}`, {
+        method: "DELETE",
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        alert(data.message || "Question deleted successfully.");
+        setQuestions(questions.filter((q) => q.serial_no !== serialNo));
+      } else {
+        alert(`Failed to delete question: ${data.message || "Unknown error"}`);
+      }
+    } catch (error) {
+      console.error("Error deleting question:", error);
+      alert("Failed to delete question. Please try again.");
+    }
+  };
 
   // Handle editing a question
   const handleEdit = (question) => {
@@ -49,8 +73,8 @@ const QuestionsList = () => {
   // Highlight search term in results
   const highlightSearchTerm = (text) => {
     if (!searchTerm) return text;
-    const regex = new RegExp(`${searchTerm}`, "gi");
-    return text.replace(regex, "<mark>$&</mark>");
+    const regex = new RegExp(`(${searchTerm})`, "gi");
+    return text.replace(regex, "<mark>$1</mark>");
   };
 
   // Calculate total pages based on filtered questions
@@ -117,14 +141,24 @@ const QuestionsList = () => {
                 }}
               />
               <td className="border px-4 py-2">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => handleEdit(q)}
-                  className="bg-yellow-500 text-white px-3 py-1 rounded-md hover:bg-yellow-600 transition duration-300"
-                >
-                  Edit
-                </motion.button>
+                <div className="flex space-x-2">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => handleEdit(q)}
+                    className="bg-yellow-500 text-white px-3 py-1 rounded-md hover:bg-yellow-600 transition duration-300"
+                  >
+                    Edit
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => handleDelete(q.serial_no)}
+                    className="bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600 transition duration-300"
+                  >
+                    Delete
+                  </motion.button>
+                </div>
               </td>
             </tr>
           ))}

@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 from fastapi.middleware.cors import CORSMiddleware
+import math
 
 app = FastAPI()
 
@@ -22,10 +23,10 @@ app.add_middleware(
 model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
 
 # Define the path to store the embeddings separately
-EMBEDDING_FILE_PATH = './aai-base/embeddings.npy'
+EMBEDDING_FILE_PATH = './base/embeddings.npy'
 
 # Load the CSV file with questions and answers (without embeddings)
-qa_data = pd.read_csv('./aai-base/aai_qna.csv')
+qa_data = pd.read_csv('./base/vit.csv')
 
 # Remove rows where the 'QUESTION' column is empty or NaN
 qa_data = qa_data.dropna(subset=['QUESTION'])
@@ -60,7 +61,25 @@ class NewQA(BaseModel):
     answer: str
     more_info: str
 
-@app.post("/ask-aai")
+def handle_nan_values(value):
+    """Handle non-JSON compliant values"""
+    if pd.isna(value) or value is None:
+        return ""
+    if isinstance(value, (int, float)):
+        if math.isnan(value) or math.isinf(value):
+            return ""
+        return float(value) if isinstance(value, np.float32) else value
+    return str(value)
+
+def sanitize_response(obj):
+    """Recursively sanitize dictionary values for JSON compliance"""
+    if isinstance(obj, dict):
+        return {k: sanitize_response(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [sanitize_response(item) for item in obj]
+    return handle_nan_values(obj)
+
+@app.post("/ask-vit")
 async def get_answer(query: Query):
     user_question = query.message
 
@@ -78,27 +97,25 @@ async def get_answer(query: Query):
     if best_similarity >= 0.3:
         # Get the corresponding answer, more_info, and serial_no from the matched question row
         best_match = qa_data.iloc[best_match_idx]
-        serial_no = best_match['serial_no']
-        answer = best_match['ANSWER']
-        more_info = best_match['more_info']
+        serial_no = int(best_match['serial_no'])
+        answer = handle_nan_values(best_match['ANSWER'])
+        more_info = handle_nan_values(best_match['more_info'])
 
-        # Prepare the response
         response = {
-            "serial_no": int(serial_no),  # Ensure serial_no is returned as an integer
+            "serial_no": serial_no,
             "response": answer,
         }
 
-        # If the 'More info' field is not empty, append it to the response
-        if pd.notna(more_info) and more_info.strip() != '':
+        if more_info:
             response['response'] += f"\nMore Info: {more_info}"
 
     else:
-        # If similarity is below the threshold, provide a fallback response
         response = {
-            "response": "I couldn't find a precise match for your query. Could you rephrase or be more specific?",
+            "serial_no": 0,
+            "response": "I couldn't find a precise match for your query. Could you rephrase or be more specific?"
         }
 
-    return response
+    return sanitize_response(response)
 
 @app.post("/add-question")
 async def add_question(new_qa: NewQA):
@@ -140,7 +157,7 @@ async def add_question(new_qa: NewQA):
     np.save(EMBEDDING_FILE_PATH, embeddings)
 
     # Save the updated DataFrame back to the CSV file
-    qa_data.to_csv('./aai-base/aai_qna.csv', index=False)
+    qa_data.to_csv('./base/vit.csv', index=False)
 
     return {"message": f"serial_no: {new_serial_no}"}
 
@@ -177,16 +194,10 @@ async def edit_question(serial_no: int, new_qa: NewQA):
     embeddings[row_index] = updated_embedding
 
     # Save the updated DataFrame and embeddings back to the files
-    qa_data.to_csv('./aai-base/aai_qna.csv', index=False)
+    qa_data.to_csv('./base/vit.csv', index=False)
     np.save(EMBEDDING_FILE_PATH, embeddings)
 
     return {"message": f"Entry with serial_no {serial_no} has been successfully updated."}
-
-def handle_nan_values(value):
-    if isinstance(value, float) and np.isnan(value):
-        return "None"
-    return value
-
 
 @app.get("/get-all-questions")
 async def get_all_questions():
@@ -199,11 +210,46 @@ async def get_all_questions():
     for _, row in qa_data.iterrows():
         question_entry = {
             "serial_no": int(row['serial_no']),
-            "question": row['QUESTION'],
-            "answer": row['ANSWER'],
+            "question": handle_nan_values(row['QUESTION']),
+            "answer": handle_nan_values(row['ANSWER']),
             "more_info": handle_nan_values(row['more_info'])
             }
         questions_list.append(question_entry)
 
     # Return the list of all questions and their details
-    return {"questions": questions_list}
+    return sanitize_response({"questions": questions_list})
+
+@app.delete("/delete-question")
+async def delete_question(serial_no: int):
+    global qa_data, embeddings
+
+    # Check if the serial_no exists in the DataFrame
+    question_idx = qa_data[qa_data['serial_no'] == serial_no].index
+
+    # Check if question exists
+    if len(question_idx) == 0:
+        raise HTTPException(status_code=404, detail="Question not found")
+
+    # Log the rows being deleted for debugging purposes
+    print(f"Deleting row with serial_no {serial_no}:")
+    print(qa_data.loc[question_idx])  # Debug: Show the row being deleted
+
+    # Delete the question from the DataFrame
+    qa_data = qa_data.drop(question_idx)
+
+    # Reset the serial numbers to start from 1
+    qa_data['serial_no'] = range(1, len(qa_data) + 1)
+
+    # Recompute the embeddings after the deletion
+    update_embeddings()
+
+    # Save the updated DataFrame back to the CSV file
+    try:
+        qa_data.to_csv('./base/vit.csv', index=False)
+        print("CSV file updated successfully.")
+    except Exception as e:
+        print(f"Error saving CSV: {e}")
+        raise HTTPException(status_code=500, detail="Failed to save the CSV file.")
+
+    # Return a success message
+    return {"message": f"Question with serial_no {serial_no} deleted successfully", "success": True}
