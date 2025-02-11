@@ -19,7 +19,7 @@ const Hero = () => {
         </div>
       </div>
       <div className="w-full h-1/2 m-12 flex justify-center">
-        <img to="/" src={heroimg} alt="Indian Aviation Academy" />
+        <img to="/" src={heroimg} alt="VIT campus image" />
       </div>
     </section>
   );

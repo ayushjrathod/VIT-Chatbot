@@ -16,7 +16,10 @@ const Navbar = () => {
         </Link>
         {/* Menu Items */}
         <div className="hidden space-x-6 md:flex">
-          <Link to="/admin/dashboard" className="hover:text-darkGrayishBlue">
+          <Link
+            to="/admin/dashboard"
+            className="hover:text-darkGrayishBlue text-black text-lg bg-blue-500 p-2 rounded-xl"
+          >
             Admin Panel
           </Link>
         </div>

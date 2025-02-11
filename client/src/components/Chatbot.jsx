@@ -112,11 +112,7 @@ const SiteChatbot = () => {
                     {renderMessageWithLinks(message.text)}
                   </motion.div>
                 ))}
-                {/* {isLoading && (
-                  <div className="flex justify-center">
-                    <Loader className="w-6 h-6 animate-spin text-blue-500" />
-                  </div>
-                )} */}
+
                 <div ref={messagesEndRef} />
               </AnimatePresence>
             </div>
